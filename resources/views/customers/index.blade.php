@@ -101,7 +101,7 @@
 
 
                 @if($customers->isNotEmpty())
-                    <table class="table table-bordered border-primary">
+                    <table class="table table-bordered table-responsive border-primary">
                         <thead>
                         <tr class="bg-gradient-primary">
                             <th scope="col">Id</th>
