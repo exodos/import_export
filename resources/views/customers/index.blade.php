@@ -1,7 +1,7 @@
 @extends('layouts.master')
 
 @section('title')
-    Site Information
+    Customers Information
 @endsection
 
 @section('content')
@@ -24,34 +24,19 @@
                     <i class="fas fa-info-circle"></i></span>
                 {{session()->get('deleted')}}
             </div>
-        @elseif(session()->has('connection'))
+        @elseif(session()->has('unable'))
             <div class="alert alert-danger">
                 <span style="font-size: 2em; color: #ff0000">
                     <i class="fas fa-info-circle"></i></span>
-                {{session()->get('connection')}}
+                {{session()->get('unable')}}
             </div>
         @endif
-        <div class="row">
-            <div class="col-md-3 col-xl-5 mb-3">
-                {{--                <div class="sidebar px-4 py-md-0">--}}
-                <form action="{{route('customers.index')}}" class="input-group" method="get">
-                    <input type="text" class="form-control" name="search"
-                           placeholder="Search By Id, Name, Power Source Configuration Or Monitoring Status"
-                           value="{{request()->query('search')}}">
-                    <div class="input-group-addon">
-                        {{--                            <span class="input-group-text"><i class="fas fa-search"></i></span>--}}
-                        <button id="search" type="button" class="btn btn-primary">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </form>
-                {{--                </div>--}}
-            </div>
+        <div class="row mt-1">
             <div class="col">
                 @can('site-create')
                     <div class="text-right">
                         <a href="{{route('customers.create')}}" class="btn btn-outline-dark mb-2"><i
-                                class="fas fa-plus-square fa-2x"></i></a>
+                                class="bi bi-plus-circle-fill text-success" style="font-size: 1.25em;"></i></a>
                     </div>
                 @endcan
             </div>
@@ -59,8 +44,64 @@
         <div class="card border-dark mb-3">
             <div class="card-header bg-gradient-gray-dark font-weight-bold">Customer Information</div>
             <div class="card-body text-black-50">
+                <form action="{{route('customers.index')}}" method="get">
+                    @csrf
+                    <div class="row justify-content-center">
+                        <div class="col-2 mx-auto">
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="customer_name"
+                                       name="customer_name"
+                                       value="{{request()->query('customer_name')}}" placeholder="Name">
+                            </div>
+                        </div>
+                        <div class="col-2 mx-auto">
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="customer_tel"
+                                       name="customer_tel"
+                                       value="{{request()->query('customer_tel')}}" placeholder="Tel">
+                            </div>
+                        </div>
+                        <div class="col-2 mx-auto">
+                            <div class="form-group">
+                                <input type="email" class="form-control" id="customer_email"
+                                       name="customer_email"
+                                       value="{{request()->query('customer_email')}}" placeholder="Email">
+                            </div>
+                        </div>
+                        <div class="col-2 mx-auto">
+                            <div class="form-group">
+                                <input type="email" class="form-control" id="customer_address"
+                                       name="customer_address"
+                                       value="{{request()->query('customer_address')}}" placeholder="Address">
+                            </div>
+                        </div>
+                        <div class="col-2 mx-auto">
+                            <div class="form-group">
+                                <select class="form-control form-control-lg mb-3" name="customer_group"
+                                        id="customer_group">
+                                    <option value="none" selected disabled hidden>Group</option>
+                                    @foreach(\Illuminate\Support\Facades\DB::table('customers')->distinct()->orderBy('customer_group', 'ASC')->get(['customer_group']) as $group)
+                                        <option
+                                            value="{{$group->customer_group}}">{{$group->customer_group}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group-append">
+                            <button class="btn btn-navbar" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        {{--                        <div class="container text-center">--}}
+                        {{--                            <button class="btn btn-primary btn-lg" type="submit" id="search" name="search">Search--}}
+                        {{--                            </button>--}}
+                        {{--                        </div>--}}
+                    </div>
+                </form>
+
+
                 @if($customers->isNotEmpty())
-                    <table class="table table-responsive table-bordered border-primary">
+                    <table class="table table-bordered border-primary">
                         <thead>
                         <tr class="bg-gradient-primary">
                             <th scope="col">Id</th>
@@ -72,15 +113,10 @@
                             <th scope="col">Group</th>
                             <th scope="col">Created At</th>
                             <th scope="col">Updated At</th>
-                            @can('site-list')
-                                <th scope="col">Detail</th>
-                            @endcan
-                            @can('site-edit')
-                                <th scope="col">Update</th>
-                            @endcan
-                            @can('site-delete')
-                                <th scope="col">Delete</th>
-                            @endcan
+                            @canany(['site-list','site-edit','site-delete'])
+                                <th width="150px">Action</th>
+{{--                                <th width="280px">Action</th>--}}
+                            @endcanany
                         </tr>
                         </thead>
                         <tbody>
@@ -92,35 +128,33 @@
                                 <td>{{ $customer->customer_email }}</td>
                                 <td>{{ $customer->customer_address }}</td>
                                 <td>{{ $customer->customer_account }}</td>
-                                <td>{{ $customer->group_id }}</td>
-                                <td>{{ $customer->created_at->format('Y-m-d') }}</td>
-                                <td>{{ $customer->updated_at->format('Y-m-d') }}</td>
+                                <td>{{ $customer->customer_group }}</td>
+                                <td>{{ $customer->created_at}}</td>
+                                <td>{{ $customer->updated_at}}</td>
+
                                 <td>
                                     <a href="{{route('customers.show', $customer->id)}}"
                                        class="btn btn-sm">
-{{--                                        <i class="bi bi-view-list">--}}
+                                        {{--                                        <i class="bi bi-view-list">--}}
                                         <span style="font-size: 1.2em; color: Dodgerblue;">
                                            <i class="far fa-eye"></i>
                                         </span>
-                                        </a>
-                                </td>
-                                @can('site-edit')
-                                    <td><a href="{{route('customers.edit', $customer->id)}}"
-                                           class="btn btn-sm">
+                                        @can('site-edit')
+                                            <a href="{{route('customers.edit', $customer->id)}}"
+                                               class="btn btn-sm">
                                             <span style="font-size: 1.2em; color: darkgreen;">
                                            <i class="fas fa-eye-dropper"></i>
                                         </span>
-                                        </a></td>
-                                @endcan
-                                @can('site-delete')
-                                    <td>
-                                        <button class="btn btn-sm" onclick="handleDelete({{$customer->id}})">
+                                            </a>
+                                        @endcan
+                                        @can('site-delete')
+                                            <button class="btn btn-sm" onclick="handleDelete({{$customer->id}})">
                                             <span style="font-size: 1.5em; color: red;">
                                            <i class="fas fa-times"></i>
                                         </span>
-                                        </button>
-                                    </td>
-                                @endcan
+                                            </button>
+                                    @endcan
+                                </td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -145,14 +179,14 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header bg-gradient-danger">
-                            <h5 class="modal-title" id="deleteModalLabel">Delete Sites</h5>
+                            <h5 class="modal-title" id="deleteModalLabel">Delete Customer</h5>
                             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
                         <div class="modal-body">
                             <p class="text-center text-danger font-weight-bold">
-                                Are You Sure You Want To Delete This Site ?
+                                Are You Sure You Want To Delete This Customer ?
                             </p>
                         </div>
                         <div class="modal-footer">
@@ -170,7 +204,7 @@
     <script>
         function handleDelete(id) {
             var form = document.getElementById('deleteForm')
-            form.action = '/sites/' + id
+            form.action = '/customers/' + id
             // console.log('deleting', form);
             $('#deleteModal').modal('show')
         }

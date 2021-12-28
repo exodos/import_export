@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
 use App\Models\Site;
 use App\Notifications\SiteCreateNotify;
@@ -11,7 +13,9 @@ use App\Notifications\SiteUpdateNotify;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Swift_SmtpTransport;
 
@@ -41,13 +45,23 @@ class CustomerController extends Controller
 
     public function index()
     {
-        $search = request()->query('search');
-        if ($search) {
-            $customers = Customer::where('id', 'LIKE', "%{$search}%")
-                ->orWhere('customer_name', 'LIKE', "%{$search}%")
-                ->orWhere('customer_email', 'LIKE', "%{$search}%")
+//        $search = request()->query('search');
+
+        $customerName = request()->query('customer_name');
+        $customerTel = request()->query('customer_tel');
+        $customerEmail = request()->query('customer_email');
+        $customerAddress = request()->query('customer_address');
+        $customerGroup = request()->query('customer_group');
+
+        if ($customerName || $customerTel || $customerEmail || $customerAddress || $customerGroup){
+            $customers = DB::table('customers')
+                ->where('customer_name','=',"{$customerName}")
+                ->orWhere('customer_tel','=',"{$customerTel}")
+                ->orWhere('customer_email','=',"{$customerEmail}")
+                ->orWhere('customer_address','=',"{$customerAddress}")
+                ->orWhere('customer_group','=',"{$customerGroup}")
                 ->paginate(10);
-        } else {
+        }else{
             $customers = Customer::latest()->paginate(10);
         }
 
@@ -71,22 +85,11 @@ class CustomerController extends Controller
      * @param Request $request
      * @return Response
      */
-    public function store(Request $request)
+    public function store(StoreCustomerRequest $request)
     {
-        request()->validate([
-            'id' => 'required|unique:sites|min:6|max:6',
-            'customers_name' => 'required',
-            'customers_tel' => 'required',
-            'customers_email' => 'required',
-            'customers_address' => 'required',
-            'customers_account' => 'required',
-            'group_id' => 'required',
-        ]);
-
         Customer::create($request->all());
-        session()->flash('success', 'Site Created Successfully.');
+        session()->flash('success', 'Customer Created Successfully.');
         return redirect()->route('customers.index');
-
 
 
     }
@@ -94,19 +97,19 @@ class CustomerController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param Site $site
+     * @param $id
      * @return Response
      */
 
-    public function show(Site $site)
+    public function show($id)
     {
-        $sites = Site::find($site);
-        if (empty($sites)) {
-            redirect()->route('sites.index');
+        $customer = Customer::find($id);
+        if (empty($customer)) {
+            redirect()->route('customers.index');
         }
 //        $sites = $sites->load('air_conditioners', 'batteries', 'powers', 'rectifiers', 'solar_panels', 'towers', 'ups', 'work_orders');
 
-        return view('sites.show', compact('site'));
+        return view('customers.show', compact('customer'));
 
     }
 
@@ -119,114 +122,52 @@ class CustomerController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param Site $site
+     * @param Customer $customer
      * @return Response
      */
-    public function edit(Site $site)
+    public function edit(Customer $customer)
     {
-        return view('sites.edit', compact('site'));
+        return view('customers.edit', compact('customer'));
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param Request $request
-     * @param Site $site
+     * @param Customer $customer
      * @return Response
-     * @throws ValidationException
      */
-    public function update(Request $request, Site $site)
+    public function update(UpdateCustomerRequest $request, Customer $customer)
     {
-        request()->validate([
-            'id' => 'required|min:6|max:6',
-            'sites_name' => 'required',
-            'ps_configuration' => 'required',
-            'monitoring_status' => 'required',
-            'sites_latitude' => 'required',
-            'sites_longitude' => 'required',
-            'sites_region_zone' => 'required',
-            'sites_political_region' => 'required',
-            'sites_location' => 'required',
-            'sites_class' => 'required',
-            'sites_value' => 'required',
-            'sites_type' => 'required',
-            'maintenance_center' => 'required',
-            'distance_mc' => 'required',
-            'list_of_ne' => 'required',
-            'number_of_towers' => 'required',
-            'number_of_generator' => 'required',
-            'number_of_airconditioners' => 'required',
-            'number_of_rectifiers' => 'required',
-            'number_of_solar_system' => 'required',
-            'number_of_down_links' => 'required',
-            'work_order_id' => 'required',
-        ]);
 
         try {
-            $transport = (new Swift_SmtpTransport('smtp.mailtrap.io', 2525, 'tls'))
-                ->setUsername('d64ebeb2b3a8d6')
-                ->setPassword('29853082ca6ace');
-
-            $mailer = new \Swift_Mailer($transport);
-            $mailer->getTransport()->start();
-
-            $site->update($request->all());
-
-            Notification::route('mail', 'exodosbob@gmail.com')
-                ->notify(new SiteUpdateNotify($site));
-
-            session()->flash('updated', 'Sites Successfully Updated!');
-            return redirect()->route('sites.index');
-        } catch (\Exception $exception) {
-            $message = $exception->getMessage();
-            session()->flash('connection', $message);
-            return redirect()->route('sites.index');
+            $customer->update($request->all());
+            session()->flash('updated', 'Customer Successfully Updated!');
+            return redirect()->route('customers.index');
         } catch (\Exception $e) {
-
-            session()->flash('unable', 'Cannot Update Site With This Id!');
-            return redirect()->route('sites.index');
+            session()->flash('unable', 'Cannot Update Customer With This Id!');
+            return redirect()->route('customers.index');
         }
-
-//        $site->update($request->all());
-
 
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param Site $site
+     * @param Customer $customer
      * @return Response
-     * @throws \Exception
      */
-    public function destroy(Site $site)
+    public function destroy(Customer $customer)
     {
         try {
-            $transport = (new Swift_SmtpTransport('smtp.mailtrap.io', 2525, 'tls'))
-                ->setUsername('d64ebeb2b3a8d6')
-                ->setPassword('29853082ca6ace');
 
-            $mailer = new \Swift_Mailer($transport);
-            $mailer->getTransport()->start();
+            $customer->delete();
 
-            $site->delete();
-
-            Notification::route('mail', 'exodosbob@gmail.com')
-                ->notify(new SiteDeleteNotify($site));
-
-            session()->flash('deleted', 'Site Successfully Deleted!');
-            return redirect()->route('sites.index');
-        } catch (\Exception $exception) {
-            $message = $exception->getMessage();
-//            session()->flash('connection', 'Connection Error! Please Check If You Have Internet Connection');
-            session()->flash('connection', $message);
-            return redirect()->route('sites.index');
+            session()->flash('deleted', 'Customer Successfully Deleted!');
+            return redirect()->route('customers.index');
         } catch (\Exception $e) {
-
-            session()->flash('unable', 'Cannot Delete Site With This Id: Please Check If This Site Id Is Connected To Any Devices');
-            return redirect()->route('sites.index');
+            session()->flash('unable', 'Cannot Update Customer With This Id!');
+            return redirect()->route('customers.index');
         }
     }
-
-
 }

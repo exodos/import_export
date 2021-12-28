@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
             PermissionTableSeeder::class,
             CreateAdminUserSeeder::class,
             GroupSeeder::class,
-            CustomerSeeder::class
+            CustomerSeeder::class,
+            VendorSeeder::class
         ]);
     }
 }

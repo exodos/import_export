@@ -14,7 +14,7 @@ class GroupFactory extends Factory
     public function definition()
     {
         return [
-            'group_name' => $this->faker->unique()->domainName
+            'group_name' => $this->faker->unique()->domainWord
         ];
     }
 }
